@@ -7,7 +7,7 @@
 ## 使い方
 1. リポジトリをクローンする
 1. 任意のプロジェクトのフォルダに`line-graph-drawer.js`をコピーする
-1. html内でscriptタグを用いてロード（グローバルに`lineGraphDrawer`が追加されます）
+1. html内でscriptタグを用いてロード（グローバルに`LineGraphDrawer`が追加されます）
 1. JSからコンストラクタを用いてインスタンスを生成し，実行
 
 ```html
