@@ -1,20 +1,20 @@
 const LineGraphDrawer = (_ => {
 
+    "use strict";
+
     //constructor func
     const LineGraphDrawer = function (param) {
-
-        "use strict";
 
         //dom element create func
         const el = tag => document.createElement(tag);
 
-        //setup param valuea
+        //setup param value
         const data = param.data;
         if (!data) {
-            throw new Error("Illegal argument.\nline graph drawer requires prot data array!");
+            throw new Error("Illegal argument.\nline graph drawer requires data property as array!");
         }
         const label = param.label || new Array(data.length).fill(0).map((_, i) => i);
-        const insertTarget = document.querySelector(param.el);
+        const maxDataLength = param.maxDataLength;
         const labelWidth = 50;
         const height = param.height || 300;
         const graphWidth = param.width ? param.width - 50 : 350;
@@ -44,6 +44,7 @@ const LineGraphDrawer = (_ => {
 
         this.data = data;
         this.label = label;
+        this.maxDataLength = maxDataLength;
         this.distance = distance;
         this.height = height;
         this.width = param.width;
@@ -57,17 +58,15 @@ const LineGraphDrawer = (_ => {
         this._canvas = canvas;
 
         //element insertion
-        if (insertTarget) {
-            insertTarget.appendChild(appWrap);
-            this.render();
-        }
+        this.appendTo(param.el);
+
+        //rendering
+        this.render();
 
     };
 
     //rendering graph
     LineGraphDrawer.prototype.render = function () {
-
-        "use strict";
 
         const data = this.data;
         const label = this.label;
@@ -167,11 +166,104 @@ const LineGraphDrawer = (_ => {
     //insert graph to element
     LineGraphDrawer.prototype.appendTo = function (el) {
 
-        "use strict";
-
         const elm = document.querySelector(el);
         if (elm) elm.appendChild(this._app);
 
+    };
+
+    //push data and label, rerendering
+    LineGraphDrawer.prototype.push = function (data, label, renderFlg = true) {
+
+        if (typeof data == "number") {
+            this.data.push(data);
+            this.label.push(label);
+        } else {
+            data.forEach(d => this.data.push(d));
+            label.forEach(l => this.label.push(l));
+        }
+        varidateDataArray(this);
+        renderFlg && this.render();
+
+    };
+
+    //unshift data and label, rerendering
+    LineGraphDrawer.prototype.unshift = function (data, label, renderFlg = true) {
+
+        if (typeof data == "number") {
+            this.data.unshift(data);
+            this.label.unshift(label);
+        } else {
+            data.forEach(d => this.data.unshift(d));
+            label.forEach(l => this.label.unshift(l));
+        }
+        varidateDataArray(this);
+        renderFlg && this.render();
+
+    };
+
+    //insert data and label, rerendering
+    LineGraphDrawer.prototype.insertTo = function (index, data, label, renderFlg = true) {
+
+        if (typeof data == "number") {
+            this.data.splice(index, 0, data);
+            this.label.splice(index, 0, label);
+        } else {
+            this.data.splice(index, 0, ...data);
+            this.label.splice(index, 0, ...label);
+        }
+        varidateDataArray(this);
+        renderFlg && this.render();
+
+    };
+
+    //pop data and label, rerendering
+    LineGraphDrawer.prototype.pop = function (renderFlg = true) {
+
+        const dropData = this.data.pop();
+        const dropLabel = this.label.pop();
+        renderFlg && this.render();
+        return {
+            data: dropData,
+            label: dropLabel
+        };
+
+    };
+
+    //shift data and label, rerendering
+    LineGraphDrawer.prototype.shift = function (renderFlg = true) {
+
+        const dropData = this.data.shift();
+        const dropLabel = this.label.shift();
+        renderFlg && this.render();
+        return {
+            data: dropData,
+            label: dropLabel
+        };
+
+    };
+
+    //drop data and label, rerendering
+    LineGraphDrawer.prototype.dropFrom = function (index, length, renderFlg = true) {
+
+        const dropData = this.data.splice(index, length);
+        const dropLabel = this.label.splice(index, length);
+        renderFlg && this.render();
+        return {
+            data: dropData,
+            label: dropLabel
+        };
+
+    };
+
+    //varidate data and label array
+    const varidateDataArray = lgd => {
+        const len = lgd.data.length;
+        const maxLen = lgd.maxDataLength;
+        if (maxLen) {
+            if (len > maxLen) {
+                lgd.dropFrom(len - (len - maxLen), len - maxLen);
+            }
+        }
     };
 
     return LineGraphDrawer;
