@@ -17,6 +17,7 @@
                 el: "#graph-area",
                 data: [5],
                 label: [0],
+                maxDataLength: 50,
                 width: 800,
                 height: 450,
                 labelDistance: 50,
@@ -28,10 +29,7 @@
             });
             let cnt = 1;
             let timer = setInterval(_ => {
-                myGraph.data.unshift((Math.random() * 11) | 0);
-                myGraph.label.unshift(cnt++);
-                myGraph.render();
-                if (cnt == 100) clearInterval(timer);
+                myGraph.unshift((Math.random() * 11) | 0, cnt++);
             }, 1000);
         </script>
     </body>

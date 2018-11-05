@@ -36,6 +36,10 @@ const myGraph = new LineGraphDrawer({
 myGraph.data.push(30);
 myGraph.label.push(5);
 myGraph.render();
+
+//よりシンプルに、LineGraphDrawerインスタンスのpushメソッド等を介すことで、
+//値の追加と描画の更新を一括で行うこともできる
+myGraph.push(5, 6);
 ```
 
 より詳細な使用方法は`test/index.html`を参照してください．
