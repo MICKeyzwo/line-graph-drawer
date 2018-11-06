@@ -61,6 +61,7 @@ const LineGraphDrawer = (_ => {
         this.appendTo(param.el);
 
         //rendering
+        varidateDataArray(this);
         this.render();
 
     };
