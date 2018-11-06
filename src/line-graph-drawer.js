@@ -22,8 +22,8 @@ const LineGraphDrawer = (_ => {
         const strokeColor = param.strokeColor || "blue";
         const fillColor = param.fillColor || "rgba(0, 0, 255, 0.5)";
         const pointColor = param.pointColor || "blue";
-        const ruleNumber = param.ruleNumber || 5;
-        const ruleMax = param.ruleMax || Math.max(...data) * 1.2;
+        const ruleNumber = param.ruleNumber;
+        const ruleMax = param.ruleMax;
 
         //setup elements
         const appWrap = el("div");
