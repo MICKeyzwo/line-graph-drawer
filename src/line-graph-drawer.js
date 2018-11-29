@@ -13,15 +13,16 @@ const LineGraphDrawer = (_ => {
         if (!data) {
             throw new Error("Illegal argument.\nline graph drawer requires data property as array!");
         }
+        const dimention = param.dataDimentions;
         const label = param.label || new Array(data.length).fill(0).map((_, i) => i);
         const maxDataLength = param.maxDataLength;
         const labelWidth = 50;
         const height = param.height || 300;
         const graphWidth = param.width ? param.width - 50 : 350;
         const distance = param.labelDistance || 50;
-        const strokeColor = param.strokeColor || "blue";
-        const fillColor = param.fillColor || "rgba(0, 0, 255, 0.5)";
-        const pointColor = param.pointColor || "blue";
+        const strokeColor = param.strokeColor// || "blue";
+        const fillColor = param.fillColor// || "rgba(0, 0, 255, 0.5)";
+        const pointColor = param.pointColor// || "blue";
         const ruleNumber = param.ruleNumber;
         const ruleMax = param.ruleMax;
 
@@ -43,6 +44,7 @@ const LineGraphDrawer = (_ => {
         canvas.width = distance * (data.length - 1) + 40;
 
         this.data = data;
+        this.dimention = dimention;
         this.label = label;
         this.maxDataLength = maxDataLength;
         this.distance = distance;
@@ -70,6 +72,7 @@ const LineGraphDrawer = (_ => {
     LineGraphDrawer.prototype.render = function () {
 
         const data = this.data;
+        const dimention = this.dimention;
         const label = this.label;
         const distance = this.distance;
         const height = this.height;
@@ -79,9 +82,14 @@ const LineGraphDrawer = (_ => {
         const vLabel = this._vlabel;
         const canvas = this._canvas;
 
-        const graphMax = this.ruleMax || Math.max(...data) * 1.2;
+        const graphMax = this.ruleMax.map((val, idx) => val || Math.max(...data[idx]) * 1.2);
         const ruleNumber = this.ruleNumber || 5;
-        let step = new Array(ruleNumber + 1).fill(0).map((_, i) => i * graphMax / ruleNumber);
+        const step = new Array(dimention)
+            .fill(0)
+            .map(_ => new Array(ruleNumber + 1))
+            .map((arr, dim) => 
+                arr.fill(0).map((_, i) => i * graphMax[dim] / ruleNumber)
+            );
 
         //print v-label
         const labelCtx = vLabel.getContext("2d");
@@ -90,12 +98,19 @@ const LineGraphDrawer = (_ => {
         labelCtx.font = "12px 'Times New Roman'";
         labelCtx.textBaseline = "middle";
         labelCtx.fillStyle = "black";
-        step.forEach((s, i) => {
-            labelCtx.fillText((s + "").slice(0, 6), 45, (height - 50) - (height - 70) / ruleNumber * i);
-        });
+        for (let i = 0; i < ruleNumber + 1; i++) {
+            let str = "";
+            for (let j = 0; j < dimention; j++) {
+                str += (j != 0 ? "," : "") + (+((step[j][i] + "").slice(0, 5))) + "";
+            }
+            labelCtx.fillText(str, 45, (height - 50) - (height - 70) / ruleNumber * i);
+        }
+        // step.forEach((s, i) => {
+        //     labelCtx.fillText((s + "").slice(0, 6), 45, (height - 50) - (height - 70) / ruleNumber * i);
+        // });
 
         //print graph border
-        canvas.width = distance * (data.length - 1) + 40;
+        canvas.width = distance * (data[0].length - 1) + 40;
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
@@ -113,13 +128,13 @@ const LineGraphDrawer = (_ => {
         //draw rule
         ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
         ctx.lineWidth = 2;
-        step.forEach((_, i) => {
-            if (i == 0) return;
+        for(let i = 0; i < ruleNumber + 1; i++) {
+            if (i == 0) continue;
             ctx.beginPath();
             ctx.moveTo(20, (height - 50) - (height - 70) / ruleNumber * i);
             ctx.lineTo(canvas.width - 20, (height - 50) - (height - 70) / ruleNumber * i);
             ctx.stroke();
-        });
+        };
         label.forEach((_, i) => {
             if (i == 0 || i == label.length - 1) return;
             ctx.beginPath();
@@ -129,38 +144,66 @@ const LineGraphDrawer = (_ => {
         });
 
         //draw line
-        ctx.strokeStyle = strokeColor;
-        ctx.beginPath();
-        data.forEach((d, i) => {
-            if (i == 0) ctx.moveTo(20, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
-            else ctx.lineTo(20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
+        // data.forEach((d, i) => {
+        //     if (i == 0) ctx.moveTo(20, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
+        //     else ctx.lineTo(20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
+        // });
+        data.forEach((arr, dim) => {
+            ctx.beginPath();
+            arr.forEach((d, i) => {
+                ctx.strokeStyle = strokeColor[0] || "blue";
+                if (i == 0) ctx.moveTo(20, (canvas.height - 50) - (d / step[dim][step[dim].length - 1] * (height - 70)));
+                else ctx.lineTo(20 + i * distance, (canvas.height - 50) - (d / step[dim][step[dim].length - 1] * (height - 70)));
+            })
+            ctx.stroke();
         });
-        ctx.stroke();
 
         //draw points
-        data.forEach((d, i) => {
-            ctx.fillStyle = pointColor;
-            ctx.beginPath();
-            ctx.arc(20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)), 5, 0, Math.PI * 2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.fillStyle = "black";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "bottom";
-            labelCtx.font = "15px 'Arial'";
-            ctx.fillText((d + "").slice(0, 6), 20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)) - 5);
+        // data.forEach((d, i) => {
+        //     ctx.fillStyle = pointColor;
+        //     ctx.beginPath();
+        //     ctx.arc(20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)), 5, 0, Math.PI * 2);
+        //     ctx.closePath();
+        //     ctx.fill();
+        //     ctx.fillStyle = "black";
+        //     ctx.textAlign = "center";
+        //     ctx.textBaseline = "bottom";
+        //     labelCtx.font = "15px 'Arial'";
+        //     ctx.fillText((d + "").slice(0, 6), 20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)) - 5);
+        // });
+        data.forEach((arr, dim) => {
+            arr.forEach((d, i) => {
+                ctx.fillStyle = pointColor[dim] || "blue";
+                ctx.beginPath();
+                ctx.arc(20 + i * distance, (canvas.height - 50) - (d / step[dim][step[dim].length - 1] * (height - 70)), 5, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = "black";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+                labelCtx.font = "15px 'Arial'";
+                ctx.fillText((d + "").slice(0, 6), 20 + i * distance, (canvas.height - 50) - (d / step[dim][step[dim].length - 1] * (height - 70)) - 5);
+            })
         });
 
         //fill line area
-        ctx.fillStyle = fillColor;
-        data.forEach((d, i) => {
-            if (i == 0) ctx.moveTo(20, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
-            else ctx.lineTo(20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
+        // ctx.fillStyle = fillColor;
+        // data.forEach((d, i) => {
+        //     if (i == 0) ctx.moveTo(20, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
+        //     else ctx.lineTo(20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
+        // });
+        data.forEach((arr, dim) => {
+            ctx.fillStyle = fillColor[dim] || "rgba(0, 0, 255, 0.5)";
+            ctx.beginPath();
+            arr.forEach((d, i) => {
+                if (i == 0) ctx.moveTo(20, (canvas.height - 50) - (d / step[dim][step[dim].length - 1] * (height - 70)));
+                else ctx.lineTo(20 + i * distance, (canvas.height - 50) - (d / step[dim][step[dim].length - 1] * (height - 70)));
+            });
+            ctx.lineTo(canvas.width - 20, height - 50);
+            ctx.lineTo(20, height - 50);
+            ctx.closePath();
+            ctx.fill();
         });
-        ctx.lineTo(canvas.width - 20, height - 50);
-        ctx.lineTo(20, height - 50);
-        ctx.closePath();
-        ctx.fill();
 
     };
 
@@ -175,11 +218,14 @@ const LineGraphDrawer = (_ => {
     //push data and label, rerendering
     LineGraphDrawer.prototype.push = function (data, label, renderFlg = true) {
 
-        if (typeof data == "number") {
-            this.data.push(data);
+        if (data.length != this.dimention) throw Error("Illegal argument.\nUnmatch data diementions.");
+        if (typeof data[0] == "number") {
+            // this.data.push(data);
+            this.data.forEach((d, dim) => d.push(data[dim]));
             this.label.push(label);
         } else {
-            data.forEach(d => this.data.push(d));
+            // data.forEach(d => this.data.push(d));
+            data.forEach((arr, dim) => arr.forEach(d => d.push(data[dim])));
             label.forEach(l => this.label.push(l));
         }
         varidateDataArray(this);
@@ -190,12 +236,15 @@ const LineGraphDrawer = (_ => {
     //unshift data and label, rerendering
     LineGraphDrawer.prototype.unshift = function (data, label, renderFlg = true) {
 
-        if (typeof data == "number") {
-            this.data.unshift(data);
+        if (data.length != this.dimention) throw Error("Illegal argument.\nUnmatch data diementions.");
+        if (typeof data[0] == "number") {
+            // this.data.unshift(data);
+            this.data.forEach((d, dim) => d.unshift(data[dim]));
             this.label.unshift(label);
         } else {
-            data.forEach(d => this.data.unshift(d));
-            label.forEach(l => this.label.unshift(l));
+            // data.forEach(d => this.data.unshift(d));
+            this.data.forEach((arr, dim) => arr.forEach(d => d.unshift(data[dim])));
+            this.label.forEach(l => this.label.unshift(l));
         }
         varidateDataArray(this);
         renderFlg && this.render();
@@ -205,11 +254,14 @@ const LineGraphDrawer = (_ => {
     //insert data and label, rerendering
     LineGraphDrawer.prototype.insertTo = function (index, data, label, renderFlg = true) {
 
-        if (typeof data == "number") {
-            this.data.splice(index, 0, data);
+        if (data.length != this.dimention) throw Error("Illegal argument.\nUnmatch data diementions.");
+        if (typeof data[0] == "number") {
+            // this.data.splice(index, 0, data);
+            this.data.forEach((d, dim) => d.splice(index, 0, data[dim]));
             this.label.splice(index, 0, label);
         } else {
-            this.data.splice(index, 0, ...data);
+            // this.data.splice(index, 0, ...data);
+            this.data.forEach((arr, dim) => arr.forEach(d => d.splice(index, 0, ...data[dim])))
             this.label.splice(index, 0, ...label);
         }
         varidateDataArray(this);
@@ -220,7 +272,8 @@ const LineGraphDrawer = (_ => {
     //pop data and label, rerendering
     LineGraphDrawer.prototype.pop = function (renderFlg = true) {
 
-        const dropData = this.data.pop();
+        // const dropData = this.data.pop();
+        const dropData = this.data.map(d => d.pop());
         const dropLabel = this.label.pop();
         renderFlg && this.render();
         return {
@@ -233,7 +286,8 @@ const LineGraphDrawer = (_ => {
     //shift data and label, rerendering
     LineGraphDrawer.prototype.shift = function (renderFlg = true) {
 
-        const dropData = this.data.shift();
+        // const dropData = this.data.shift();
+        const dropData = this.data.map(d => d.shift());
         const dropLabel = this.label.shift();
         renderFlg && this.render();
         return {
@@ -246,7 +300,8 @@ const LineGraphDrawer = (_ => {
     //drop data and label, rerendering
     LineGraphDrawer.prototype.dropFrom = function (index, length, renderFlg = true) {
 
-        const dropData = this.data.splice(index, length);
+        // const dropData = this.data.splice(index, length);
+        const dropData = this.data.map(d => d.splice(index, length));
         const dropLabel = this.label.splice(index, length);
         renderFlg && this.render();
         return {
@@ -258,7 +313,7 @@ const LineGraphDrawer = (_ => {
 
     //varidate data and label array
     const varidateDataArray = lgd => {
-        const len = lgd.data.length;
+        const len = lgd.data[0].length;
         const maxLen = lgd.maxDataLength;
         if (maxLen) {
             if (len > maxLen) {
