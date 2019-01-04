@@ -149,9 +149,9 @@ const LineGraphDrawer = (_ => {
         //     else ctx.lineTo(20 + i * distance, (canvas.height - 50) - (d / step[step.length - 1] * (height - 70)));
         // });
         data.forEach((arr, dim) => {
+            ctx.strokeStyle = strokeColor[dim] || "blue";
             ctx.beginPath();
             arr.forEach((d, i) => {
-                ctx.strokeStyle = strokeColor[0] || "blue";
                 if (i == 0) ctx.moveTo(20, (canvas.height - 50) - (d / step[dim][step[dim].length - 1] * (height - 70)));
                 else ctx.lineTo(20 + i * distance, (canvas.height - 50) - (d / step[dim][step[dim].length - 1] * (height - 70)));
             })
